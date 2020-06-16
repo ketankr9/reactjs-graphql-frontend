@@ -25,13 +25,10 @@ const getLocalStorage = () => {
 
 const setLocalStorage = (newLocalState) => {
     console.assert(newLocalState, "null or undefined");
-    const lastStorage = getLocalStorage();
-    for(let k in newLocalState)
-        lastStorage[k] = newLocalState[k];
-    localStorage.setItem("gameXYZstate", JSON.stringify(lastStorage));
+    localStorage.setItem("gameXYZstate", JSON.stringify(newLocalState));
 };
 
-var isLocalhost = Boolean(
+const isLocalhost = Boolean(
     window.location.hostname === 'localhost' ||
       // [::1] is the IPv6 localhost address.
       window.location.hostname === '[::1]' ||
@@ -41,9 +38,7 @@ var isLocalhost = Boolean(
       )
   );
 
-isLocalhost = false;
-
-let GRAPHQL_SERVER = "http://34.72.71.11:8080/graphql";
+let GRAPHQL_SERVER = "https://impleo.serveo.net/graphql";
 if(isLocalhost)
         GRAPHQL_SERVER = "http://localhost:8080/graphql";
 
@@ -86,19 +81,80 @@ class ScoreBoard extends React.Component{
     }
 }
 
+// class Game extends React.Component {
+//     constructor(props){
+//         super(props)
+//         this.state = {
+//             currentScore: this.props.restoredState.currentScore || 0,
+//             maxScore: this.props.restoredState.maxScore || 0,
+//             name: this.props.restoredState.name,
+//             id: this.props.restoredState.id,
+//             score: this.props.restoredState.score
+//         }
+//     }
+
+//     getPoints(){
+//         const s = this.state;
+//         const pointsEarned = s.currentScore ? s.maxScore - s.currentScore : s.maxScore*s.maxScore;
+//         return pointsEarned;
+//     }
+
+//     updateLocalStorage(){
+//         setLocalStorage(this.state);
+//         this.props.onUpdateUserScore(this.state.score)
+//     }
+
+//     incrementScore(i){
+//         const newScore = this.state.currentScore+i;
+//         if(newScore < 0)
+//             return;
+//         this.setState({
+//             currentScore: newScore,
+//             maxScore: Math.max(this.state.maxScore, newScore)
+//         }, () => this.updateLocalStorage() );
+//     }
+
+//     render(){
+//         return (
+//             <div>
+//                 <div>
+//                     <label>Max Value</label>:<input readOnly={true} value={this.state.maxScore}/>
+//                     <br/>
+//                     <label>Current Value</label>:<input readOnly={true} value={this.state.currentScore}/>
+//                 </div>
+//                 <div>
+//                     <button onClick={ () => this.incrementScore(+1) }>+</button>
+//                     <button onClick={ () => this.incrementScore(-1) }>-</button>
+//                     <ApolloProvider client={client}>
+//                     <Mutation mutation={UPDATE_USER}
+//                         onCompleted={(data)=> {
+//                             console.log(data)
+//                             toast(`🦄 You earned ${data.user.score} points`)
+//                             this.setState({maxScore: 0, currentScore: 0, score: data.user.score}, () => this.updateLocalStorage())
+//                         }}
+//                         variables = {{id: this.state.id, score: this.getPoints()}}>
+//                             {updateUser => <button onClick={updateUser}>Collect</button> }  
+//                     </Mutation>
+//                     </ApolloProvider>
+//                 </div>
+//             </div>
+//         );
+//     }
+// }
+
 class Game extends React.Component {
     constructor(props){
         super(props)
         this.state = {
             name: this.props.name,
             id: this.props.id,
-            score: this.props.score || 0,
-            lastEarned: 0
+            score: this.props.score || 0
         }
     }
 
-    getRandomPoints(){
+    getPoints(){
         const earnedPoints = Math.floor(Math.random()*100);
+        // toast(`🦄 You earned ${earnedPoints} points`)
         return earnedPoints;
     }
 
@@ -107,36 +163,22 @@ class Game extends React.Component {
         this.props.onScoreChange(this.state.score)
     }
 
-    pointsEarned(){
-        if(this.state.score)
-            return (<label>Your earned {this.state.lastEarned} points</label>);
-        return null;
-    }
-
-    testme(updateUser){
-        this.setState({lastEarned: this.getRandomPoints()})
-        updateUser();
-    }
-
     render(){
         return (
             <div>
                 <div>
                     <br/><br/>
-                    {this.pointsEarned()}
+                    <label>Your earned {this.state.score} points</label>
                 </div>
                 <div>
                     <ApolloProvider client={client}>
                     <Mutation mutation={UPDATE_USER}
                         onCompleted={(data)=> {
-
                             if(!data) { setLocalStorage({}); this.setState({id: null}); return; }
-
-                            toast(`🦄 You earned ${this.state.lastEarned} points`)
                             this.setState({score: data.user.score}, () => this.updateLocalStorage())
                         }}
-                        variables = {{id: this.state.id, score: this.state.lastEarned}}>
-                            {updateUser => <button onClick={ () => this.testme(updateUser) }>Spin</button> } 
+                        variables = {{id: this.state.id, score: this.getPoints()}}>
+                            {updateUser => <button onClick={updateUser}>Spin</button> } 
                     </Mutation>
                     </ApolloProvider>
                 </div>
@@ -189,7 +231,6 @@ class GameBoard extends React.Component {
     }
 
     render(){
-        // if the local storage does not have a id, then register the user and get the id
         if(!this.state.id){
             return(
                 <div>
@@ -197,7 +238,7 @@ class GameBoard extends React.Component {
                     <input type="text" name="name" value={this.state.name} onChange={ e => this.setState({tmpName : e.target.value}) }/>
                     <ApolloProvider client={client}>
                     <Mutation mutation={CREATE_USER}
-                        onCompleted={ data => {
+                        onCompleted={(data) => {
                             this.setState({ id: data.user.id,  name: data.user.name}, () => setLocalStorage(this.state)); 
                         } }
                         variables = {{name: this.state.tmpName}}>
@@ -215,28 +256,23 @@ class GameBoard extends React.Component {
                 <br/>
                 
                 <ApolloProvider client={client}>
-                <Query query={QueryGetUserById} variables={{id: this.state.id}} 
-                onCompleted={ data => {
-                    if(data && data.user)
-                        this.setState({totalScore: data.user.score})
-                }}> 
+                <Query query={QueryGetUserById} variables={{id: this.state.id}}> 
                 { props => {
                     const {error, loading, data} = props;
                     if(error) return (<div>Error {JSON.stringify(error)}</div>);
                     if(loading) return (<div>Loading...</div>);
                     if(!data && !data.user) return (<div>000</div>);
-                    // console.log(data);
-                    return <label>Your total score is {this.state.totalScore}</label>;
+                    // this.setState({totalScore: data.score})
+                    return <label>Your total score is {data.score}</label>;
                     
                 }}
                 </Query>
+
                 </ApolloProvider>
-
                 <Game 
-                    id={this.state.id} onScoreChange={ x => this.setState({totalScore: x}) }
+                    id={this.state.id} onScoreChange={ x => this.setState({totalScore: this.state.totalScore+x}) }
                 />
-
-                {/* <Timer/> */}
+                <Timer/>
                 <ToastContainer/>
             </div>
         );

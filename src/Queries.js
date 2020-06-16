@@ -30,8 +30,6 @@ export const QueryGetAllUsers = gql`
 export const QueryGetUserById = gql`
 query getUserById($id: ID!) {
     user: getUserById(id: $id){
-        id
-        name
         score
     }
 }`;
