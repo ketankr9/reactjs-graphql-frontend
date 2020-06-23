@@ -2,6 +2,11 @@
 
 Simple reactJS frontend app, which intracts with a backend API using GraphQL apollo-client.  
 
+-   Makes use of the browser localstorage api to store user's state locally.
+-   Uses Apollo-Client for fetching data through GraphQL API from a backend server.  
+-   The frontend is static and can be deployed using nginx among many available servers.   
+-   The GraphQL server address can be setup in App.js  
+
 ---
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 

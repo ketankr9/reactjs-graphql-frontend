@@ -60,7 +60,7 @@ class ScoreBoard extends React.Component{
         return(
             <ApolloProvider client={client}>
             <div>
-              <h3>Score Board</h3>
+              <h3>Live Score Board</h3>
               <Query query={QueryGetAllUsersSorted}>
                 {props => {
                     const { error, loading, data } = props;
@@ -122,7 +122,8 @@ class Game extends React.Component {
                     <ApolloProvider client={client}>
                     <Mutation mutation={UPDATE_USER}
                         onCompleted={(data)=> {
-                            console.log(data)
+                            // console.log(data);
+                            window.location.reload();
                             toast(`🦄 Your earned ${this.getPoints()} new points`);
                             this.setState({maxScore: 0, currentScore: 0, score: data.user.score}, () => this.updateLocalStorage())
                         }}
@@ -171,6 +172,7 @@ class GameBoard extends React.Component {
         super(props)
 
         const restoredState = getLocalStorage();
+        console.log(restoredState);
         this.state = {
             restoredState: restoredState,
             tmpName: null
@@ -204,15 +206,15 @@ class GameBoard extends React.Component {
             <div>
                 <Timer/>
                 <h1>Game</h1>
-                <label>Welcome </label> 
-                <label key={this.state.restoredState.id}>{this.state.restoredState.name + ", Total Score: " + this.state.restoredState.score | 0}</label>
+                <label>Welcome <b>{this.state.restoredState.name} </b> </label> <br/>
+                <label key={this.state.restoredState.id}> Total Score: <b>{this.state.restoredState.score | 0}</b> </label>
                 <br/><br/><br/>
                 <Game 
                     restoredState={this.state.restoredState} onUpdateUserScore={ (x) => { 
                         const restoredState = this.state.restoredState;
                         restoredState.score = x;
                         this.setState({restoredState: restoredState});
-                    } }
+                    } } 
                 />
                 <ToastContainer/>
             </div>
