@@ -7,9 +7,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import { ApolloProvider, Query, Mutation } from "react-apollo";
 import ApolloClient from "apollo-boost";
 
-import {QueryGetTopNUsers, CREATE_USER, UPDATE_USER, QueryGetAllUsersSorted, QueryGetAllUsers} from './Queries';
+import {CREATE_USER, UPDATE_USER, QueryGetAllUsersSorted} from './Queries';
 
-const log = (st) => console.log(st);
+// const log = (st) => console.log(st);
 
 const getLocalStorage = () => {
     let ret = {};
@@ -28,7 +28,7 @@ const setLocalStorage = (newLocalState) => {
     localStorage.setItem("gameXYZstate", JSON.stringify(newLocalState));
 };
 
-const isLocalhost = Boolean(
+var isLocalhost = Boolean(
     window.location.hostname === 'localhost' ||
       // [::1] is the IPv6 localhost address.
       window.location.hostname === '[::1]' ||
@@ -38,7 +38,8 @@ const isLocalhost = Boolean(
       )
   );
 
-let GRAPHQL_SERVER = "https://impleo.serveo.net/graphql";
+isLocalhost = false;
+let GRAPHQL_SERVER = "http://34.72.71.11:8080/graphql";
 if(isLocalhost)
         GRAPHQL_SERVER = "http://localhost:8080/graphql";
 
@@ -86,7 +87,7 @@ class Game extends React.Component {
         super(props)
         this.state = {
             currentScore: this.props.restoredState.currentScore || 0,
-            maxScore: this.props.restoredState.maxScore || 0,
+            // maxScore: this.props.restoredState.maxScore || 0,
             name: this.props.restoredState.name,
             id: this.props.restoredState.id,
             score: this.props.restoredState.score
@@ -94,9 +95,7 @@ class Game extends React.Component {
     }
 
     getPoints(){
-        const s = this.state;
-        const pointsEarned = s.currentScore ? s.maxScore - s.currentScore : s.maxScore*s.maxScore;
-        return pointsEarned;
+        return this.state.currentScore;
     }
 
     updateLocalStorage(){
@@ -106,11 +105,8 @@ class Game extends React.Component {
 
     incrementScore(i){
         const newScore = this.state.currentScore+i;
-        if(newScore < 0)
-            return;
         this.setState({
-            currentScore: newScore,
-            maxScore: Math.max(this.state.maxScore, newScore)
+            currentScore: newScore
         }, () => this.updateLocalStorage() );
     }
 
@@ -118,18 +114,16 @@ class Game extends React.Component {
         return (
             <div>
                 <div>
-                    <label>Max Value</label>:<input readOnly={true} value={this.state.maxScore}/>
-                    <br/>
                     <label>Current Value</label>:<input readOnly={true} value={this.state.currentScore}/>
                 </div>
                 <div>
                     <button onClick={ () => this.incrementScore(+1) }>+</button>
-                    <button onClick={ () => this.incrementScore(-1) }>-</button>
+                    {/* <button onClick={ () => this.incrementScore(-1) }>-</button> */}
                     <ApolloProvider client={client}>
                     <Mutation mutation={UPDATE_USER}
                         onCompleted={(data)=> {
                             console.log(data)
-                            toast(`🦄 You earned ${data.user.score} points`)
+                            toast(`🦄 Your earned ${this.getPoints()} new points`);
                             this.setState({maxScore: 0, currentScore: 0, score: data.user.score}, () => this.updateLocalStorage())
                         }}
                         variables = {{id: this.state.id, score: this.getPoints()}}>
@@ -167,7 +161,7 @@ class Timer extends React.Component {
 
     render(){
         return(
-            <div>{this.state.timeElapsed} seconds</div>
+            <div><i>Time elapsed</i>: {this.state.timeElapsed} seconds</div>
         );
     }
 }
@@ -208,17 +202,18 @@ class GameBoard extends React.Component {
         
         return(
             <div>
+                <Timer/>
                 <h1>Game</h1>
                 <label>Welcome </label> 
-                <label key={this.state.restoredState.id}>{this.state.restoredState.name + ", Score: " + this.state.restoredState.score}</label>
+                <label key={this.state.restoredState.id}>{this.state.restoredState.name + ", Total Score: " + this.state.restoredState.score}</label>
+                <br/><br/><br/>
                 <Game 
                     restoredState={this.state.restoredState} onUpdateUserScore={ (x) => { 
                         const restoredState = this.state.restoredState;
                         restoredState.score = x;
-                        this.setState({restoredState: restoredState})
+                        this.setState({restoredState: restoredState});
                     } }
                 />
-                <Timer/>
                 <ToastContainer/>
             </div>
         );

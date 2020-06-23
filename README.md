@@ -1,3 +1,8 @@
+## reactJS+GraphQL frontend  
+
+Simple reactJS frontend app, which intracts with a backend API using GraphQL apollo-client.  
+
+---
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
