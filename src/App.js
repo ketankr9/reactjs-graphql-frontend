@@ -205,7 +205,7 @@ class GameBoard extends React.Component {
                 <Timer/>
                 <h1>Game</h1>
                 <label>Welcome </label> 
-                <label key={this.state.restoredState.id}>{this.state.restoredState.name + ", Total Score: " + this.state.restoredState.score}</label>
+                <label key={this.state.restoredState.id}>{this.state.restoredState.name + ", Total Score: " + this.state.restoredState.score | 0}</label>
                 <br/><br/><br/>
                 <Game 
                     restoredState={this.state.restoredState} onUpdateUserScore={ (x) => { 
